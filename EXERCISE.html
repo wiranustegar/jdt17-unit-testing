@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studi Kasus Praktik — Unit Testing Mastery JDT17</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--blue:#2563eb;--green:#059669;--purple:#7c3aed;--dark:#0f172a;--gray:#64748b;--red:#dc2626;--orange:#ea580c;--bg:#f8fafc;--card:#fff;--border:#e2e8f0}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--dark);line-height:1.7}
+.hero{background:var(--dark);color:#fff;padding:60px 32px;text-align:center}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:8px}
+.hero p{color:rgba(255,255,255,.6);font-size:1.1rem}
+.hero .badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;background:rgba(37,99,235,.2);color:#93c5fd;border:1px solid rgba(37,99,235,.3)}
+main{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+h2{font-size:1.5rem;font-weight:700;margin:40px 0 16px;padding-top:24px;border-top:2px solid var(--border)}
+h3{font-size:1.15rem;font-weight:600;margin:24px 0 10px}
+p{margin-bottom:16px;color:#334155}
+pre{background:var(--dark);color:#e2e8f0;border-radius:12px;padding:20px 24px;overflow-x:auto;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7}
+code{font-family:'JetBrains Mono',monospace;font-size:.88em;background:rgba(37,99,235,.06);padding:2px 6px;border-radius:4px}
+.kw{color:#93c5fd}.ty{color:#67e8f9}.st{color:#86efac}.cm{color:#64748b;font-style:italic}.an{color:#fdba74}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin:20px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin:20px 0}
+.warn{background:#fef3c7;border:1px solid #fcd34d;border-radius:12px;padding:20px 24px;margin:20px 0}
+.ok{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:20px 24px;margin:20px 0}
+.danger{background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:20px 24px;margin:20px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th{background:var(--dark);color:#fff;padding:12px 16px;text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:1px}
+th:first-child{border-radius:8px 0 0 0}th:last-child{border-radius:0 8px 0 0}
+td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:.92rem}
+tr:last-child td{border-bottom:none}
+.check-list{list-style:none;padding:0}
+.check-list li{padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;font-size:.95rem}
+.check-list li:last-child{border-bottom:none}
+.check-list .box{width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;margin-top:2px}
+.check-list .done{background:var(--green);border-color:var(--green);position:relative}
+.check-list .done::after{content:'✓';color:#fff;position:absolute;top:-2px;left:3px;font-size:.85rem;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+.stat{text-align:center;padding:20px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.stat .num{font-size:2rem;font-weight:800;display:block}
+.stat .lbl{font-size:.8rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;justify-content:center}
+.fbox{padding:12px 20px;border-radius:10px;font-weight:600;font-size:.9rem;text-align:center;border:2px solid}
+.farr{color:var(--gray);font-size:1.2rem}
+.progress-bar{background:var(--border);border-radius:10px;height:24px;overflow:hidden;margin:16px 0}
+.progress-fill{height:100%;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff}
+.watermark{position:fixed;bottom:24px;right:28px;opacity:.06;filter:invert(1);pointer-events:none;z-index:50;width:20vw;min-width:180px;height:auto}
+@media print{.watermark{position:fixed;bottom:10px;right:10px;opacity:.1}}
+@media(max-width:700px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Studi Kasus Praktik</div>
+  <h1>Employee Management System</h1>
+  <p>Lengkapi unit test yang belum ditulis — targetkan 100% coverage</p>
+</div>
+
+<main>
+
+  <!-- ==================== SKENARIO ==================== -->
+  <h2 style="border-top:none;padding-top:0">Skenario</h2>
+  <p>Kamu baru bergabung di tim <strong>Employee Management</strong> di Indivara. Tim sebelumnya sudah menulis production code yang lengkap, tapi <strong>unit test-nya baru tercover sebagian</strong>. Tugasmu adalah <strong>melengkapi semua unit test yang hilang</strong> agar coverage mencapai 100%.</p>
+
+  <div class="danger" style="border-left:4px solid var(--red)">
+    <strong style="color:var(--red);font-size:1.1rem">&#9888; Kebijakan PMO Indivara</strong><br>
+    Di Indivara, <strong>unit test harus mencapai 100% LINE <u>dan</u> BRANCH coverage</strong> agar lolos quality gate dan bisa di-deploy ke production. Code yang coverage-nya di bawah 100% <strong>akan ditolak oleh PMO</strong> dan tidak bisa masuk ke environment production. JaCoCo sudah dikonfigurasi di <code>pom.xml</code> project ini (cek <code>LINE</code> + <code>BRANCH</code> = 1.00) — jika salah satu belum 100%, <strong><code>mvn test</code> akan GAGAL (BUILD FAILURE)</strong>.
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="num" style="color:var(--blue)">8</span>
+      <span class="lbl">File Production</span>
+    </div>
+    <div class="stat">
+      <span class="num" style="color:var(--orange)">5</span>
+      <span class="lbl">Test Sudah Ditulis</span>
+    </div>
+    <div class="stat">
+      <span class="num" style="color:var(--red)">24</span>
+      <span class="lbl">Test Harus Ditambah</span>
+    </div>
+  </div>
+
+  <h3>Coverage Saat Ini</h3>
+  <table>
+    <thead><tr><th>Test File</th><th>Sudah Ditulis</th><th>Belum Ditulis</th><th>Coverage</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>EmployeeServiceTest</code></td>
+        <td style="color:var(--green);font-weight:600">3 test</td>
+        <td style="color:var(--red);font-weight:600">14 TODO</td>
+        <td>
+          <div class="progress-bar" style="margin:0;height:18px">
+            <div class="progress-fill" style="width:18%;background:var(--orange)">18%</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td><code>EmployeeControllerTest</code></td>
+        <td style="color:var(--green);font-weight:600">2 test</td>
+        <td style="color:var(--red);font-weight:600">10 TODO</td>
+        <td>
+          <div class="progress-bar" style="margin:0;height:18px">
+            <div class="progress-fill" style="width:17%;background:var(--red)">17%</div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ==================== STRUKTUR ==================== -->
+  <h2>Struktur Project</h2>
+  <pre>
+practice/
+├── pom.xml
+├── <span class="st">EXERCISE.html</span>                         <span class="cm">← Kamu sedang baca ini</span>
+│
+├── src/main/java/com/indivara/jdt17/    <span class="cm">← Production code (JANGAN DIUBAH)</span>
+│   ├── model/
+│   │   └── <span class="ty">Employee</span>.java               <span class="cm">← Entity + validasi</span>
+│   ├── repository/
+│   │   └── <span class="ty">EmployeeRepository</span>.java     <span class="cm">← Interface JPA</span>
+│   ├── service/
+│   │   └── <span class="ty">EmployeeService</span>.java        <span class="cm">← Business logic (8 method, 2 dengan percabangan)</span>
+│   ├── controller/
+│   │   └── <span class="ty">EmployeeController</span>.java     <span class="cm">← REST API (6 endpoint)</span>
+│   ├── exception/
+│   │   ├── <span class="ty">EmployeeNotFoundException</span>.java
+│   │   ├── <span class="ty">DuplicateEmailException</span>.java
+│   │   └── <span class="ty">GlobalExceptionHandler</span>.java  <span class="cm">← Error handling</span>
+│   └── dto/
+│       └── <span class="ty">ErrorResponse</span>.java
+│
+└── src/test/java/com/indivara/jdt17/    <span class="st">← TUGAS KAMU DISINI</span>
+    ├── service/
+    │   └── <span class="ty">EmployeeServiceTest</span>.java     <span class="cm">← 3 sudah ditulis, 14 TODO</span>
+    └── controller/
+        └── <span class="ty">EmployeeControllerTest</span>.java  <span class="cm">← 2 sudah ditulis, 10 TODO</span></pre>
+
+  <div class="danger">
+    <strong>ATURAN PENTING:</strong> Kamu <strong>TIDAK BOLEH mengubah production code</strong> (folder <code>src/main/</code>). Yang boleh diubah <strong>HANYA file test</strong> (folder <code>src/test/</code>). Ini mensimulasikan kondisi nyata di dunia kerja — kamu menulis test untuk code yang sudah ada.
+  </div>
+
+  <!-- ==================== API REFERENCE ==================== -->
+  <h2>API Reference</h2>
+  <p>Endpoint yang perlu di-test:</p>
+  <table>
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Fungsi</th><th>Success</th><th>Error</th></tr></thead>
+    <tbody>
+      <tr><td><code style="color:var(--green)">GET</code></td><td><code>/api/employees</code></td><td>Ambil semua employee</td><td>200</td><td>—</td></tr>
+      <tr><td><code style="color:var(--green)">GET</code></td><td><code>/api/employees/{id}</code></td><td>Ambil employee by ID</td><td>200</td><td>404</td></tr>
+      <tr><td><code style="color:var(--blue)">POST</code></td><td><code>/api/employees</code></td><td>Buat employee baru</td><td>201</td><td>400, 409</td></tr>
+      <tr><td><code style="color:var(--orange)">PUT</code></td><td><code>/api/employees/{id}</code></td><td>Update employee</td><td>200</td><td>404</td></tr>
+      <tr><td><code style="color:var(--red)">DELETE</code></td><td><code>/api/employees/{id}</code></td><td>Hapus employee</td><td>204</td><td>404</td></tr>
+      <tr><td><code style="color:var(--green)">GET</code></td><td><code>/api/employees/department/{dept}</code></td><td>Filter by department</td><td>200</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ==================== CHECKLIST SERVICE ==================== -->
+  <h2>Checklist: EmployeeServiceTest</h2>
+  <p>File: <code>src/test/java/com/indivara/jdt17/service/EmployeeServiceTest.java</code></p>
+
+  <div class="card">
+    <h3 style="margin-top:0">Setup yang sudah disiapkan</h3>
+    <pre style="font-size:.8rem;padding:16px;margin-bottom:0">
+<span class="an">@ExtendWith</span>(<span class="ty">MockitoExtension</span>.<span class="kw">class</span>)
+<span class="kw">class</span> <span class="ty">EmployeeServiceTest</span> {
+
+    <span class="an">@Mock</span>
+    <span class="kw">private</span> <span class="ty">EmployeeRepository</span> employeeRepository;    <span class="cm">// tiruan</span>
+
+    <span class="an">@InjectMocks</span>
+    <span class="kw">private</span> <span class="ty">EmployeeService</span> employeeService;          <span class="cm">// instance asli</span>
+}</pre>
+  </div>
+
+  <ul class="check-list">
+    <li><div class="box done"></div><code>getAllEmployees_ShouldReturnAllEmployees</code> <span style="color:var(--green);font-weight:600">✓ Sudah</span></li>
+    <li><div class="box"></div><strong>TODO #1:</strong> <code>getAllEmployees_WhenEmpty_ShouldReturnEmptyList</code></li>
+    <li><div class="box done"></div><code>getEmployeeById_WhenExists_ShouldReturnEmployee</code> <span style="color:var(--green);font-weight:600">✓ Sudah</span></li>
+    <li><div class="box done"></div><code>getEmployeeById_WhenNotExists_ShouldThrowException</code> <span style="color:var(--green);font-weight:600">✓ Sudah</span></li>
+    <li><div class="box"></div><strong>TODO #2:</strong> <code>createEmployee_ShouldSaveAndReturnEmployee</code></li>
+    <li><div class="box"></div><strong>TODO #3:</strong> <code>createEmployee_WhenDuplicateEmail_ShouldThrowException</code></li>
+    <li><div class="box"></div><strong>TODO #4:</strong> <code>updateEmployee_WhenExists_ShouldUpdateAndReturn</code></li>
+    <li><div class="box"></div><strong>TODO #5:</strong> <code>updateEmployee_WhenNotExists_ShouldThrowException</code></li>
+    <li><div class="box"></div><strong>TODO #6:</strong> <code>deleteEmployee_WhenExists_ShouldDelete</code></li>
+    <li><div class="box"></div><strong>TODO #7:</strong> <code>deleteEmployee_WhenNotExists_ShouldThrowException</code></li>
+    <li><div class="box"></div><strong>TODO #8:</strong> <code>getEmployeesByDepartment_ShouldReturnFilteredList</code></li>
+  </ul>
+
+  <div class="card" style="border-left:4px solid var(--orange)">
+    <h3 style="margin-top:0">&#9670; Latihan BRANCH Coverage (TODO #9&ndash;#14)</h3>
+    <p style="margin-bottom:12px">Dua method baru di <code>EmployeeService</code> punya <strong>percabangan (branch)</strong>. LINE coverage saja tidak cukup — kamu harus menguji setiap cabang ke arah <strong>TRUE dan FALSE</strong>. Kalau tidak, JaCoCo menandai berlian <span style="color:var(--orange)">&#9670; kuning</span> (branch sebagian) dan <strong>build GAGAL</strong> walau semua baris hijau.</p>
+    <table style="font-size:.88rem;margin:0">
+      <thead><tr><th>Method</th><th>Percabangan</th><th>Test yang dibutuhkan</th></tr></thead>
+      <tbody>
+        <tr><td><code>getSalaryGrade()</code></td><td><code>if / else if / else</code><br>(3 jalur)</td><td>HIGH (&ge;20jt), MEDIUM (&ge;10jt), LOW (&lt;10jt)</td></tr>
+        <tr><td><code>isEligibleForBonus()</code></td><td><code>&amp;&amp;</code> (2 kondisi)</td><td>gaji&lt;10jt &rarr; false; gaji cukup+Engineering &rarr; true; gaji cukup+dept lain &rarr; false</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="check-list">
+    <li><div class="box"></div><strong>TODO #9:</strong> <code>getSalaryGrade_WhenSalaryHigh_ShouldReturnHigh</code></li>
+    <li><div class="box"></div><strong>TODO #10:</strong> <code>getSalaryGrade_WhenSalaryMedium_ShouldReturnMedium</code></li>
+    <li><div class="box"></div><strong>TODO #11:</strong> <code>getSalaryGrade_WhenSalaryLow_ShouldReturnLow</code></li>
+    <li><div class="box"></div><strong>TODO #12:</strong> <code>isEligibleForBonus_WhenSalaryBelowMinimum_ShouldReturnFalse</code></li>
+    <li><div class="box"></div><strong>TODO #13:</strong> <code>isEligibleForBonus_WhenSalaryEnoughAndEngineering_ShouldReturnTrue</code></li>
+    <li><div class="box"></div><strong>TODO #14:</strong> <code>isEligibleForBonus_WhenSalaryEnoughButOtherDept_ShouldReturnFalse</code></li>
+  </ul>
+
+  <!-- ==================== CHECKLIST CONTROLLER ==================== -->
+  <h2>Checklist: EmployeeControllerTest</h2>
+  <p>File: <code>src/test/java/com/indivara/jdt17/controller/EmployeeControllerTest.java</code></p>
+
+  <div class="card">
+    <h3 style="margin-top:0">Setup yang sudah disiapkan</h3>
+    <pre style="font-size:.8rem;padding:16px;margin-bottom:0">
+<span class="an">@WebMvcTest</span>(<span class="ty">EmployeeController</span>.<span class="kw">class</span>)
+<span class="kw">class</span> <span class="ty">EmployeeControllerTest</span> {
+
+    <span class="an">@Autowired</span>
+    <span class="kw">private</span> <span class="ty">MockMvc</span> mockMvc;                  <span class="cm">// simulasi HTTP</span>
+
+    <span class="an">@MockBean</span>
+    <span class="kw">private</span> <span class="ty">EmployeeService</span> employeeService;  <span class="cm">// mock service</span>
+
+    <span class="an">@Autowired</span>
+    <span class="kw">private</span> <span class="ty">ObjectMapper</span> objectMapper;        <span class="cm">// JSON converter</span>
+}</pre>
+  </div>
+
+  <ul class="check-list">
+    <li><div class="box done"></div><code>getAllEmployees_ShouldReturnOkWithList</code> <span style="color:var(--green);font-weight:600">✓ Sudah</span></li>
+    <li><div class="box"></div><strong>TODO #1:</strong> <code>getAllEmployees_WhenEmpty_ShouldReturnOkWithEmptyList</code></li>
+    <li><div class="box done"></div><code>getEmployeeById_WhenExists_ShouldReturnOk</code> <span style="color:var(--green);font-weight:600">✓ Sudah</span></li>
+    <li><div class="box"></div><strong>TODO #2:</strong> <code>getEmployeeById_WhenNotExists_ShouldReturn404</code></li>
+    <li><div class="box"></div><strong>TODO #3:</strong> <code>createEmployee_WithValidData_ShouldReturn201</code></li>
+    <li><div class="box"></div><strong>TODO #4:</strong> <code>createEmployee_WithEmptyName_ShouldReturn400</code></li>
+    <li><div class="box"></div><strong>TODO #5:</strong> <code>createEmployee_WithDuplicateEmail_ShouldReturn409</code></li>
+    <li><div class="box"></div><strong>TODO #6:</strong> <code>createEmployee_WithNegativeSalary_ShouldReturn400</code></li>
+    <li><div class="box"></div><strong>TODO #7:</strong> <code>updateEmployee_WhenExists_ShouldReturn200</code></li>
+    <li><div class="box"></div><strong>TODO #8:</strong> <code>updateEmployee_WhenNotExists_ShouldReturn404</code></li>
+    <li><div class="box"></div><strong>TODO #9:</strong> <code>deleteEmployee_WhenExists_ShouldReturn204</code></li>
+    <li><div class="box"></div><strong>TODO #10:</strong> <code>deleteEmployee_WhenNotExists_ShouldReturn404</code></li>
+  </ul>
+
+  <!-- ==================== POLA YANG HARUS DIIKUTI ==================== -->
+  <h2>Pola yang Harus Diikuti</h2>
+
+  <h3>1. Pola AAA (Arrange → Act → Assert)</h3>
+  <div class="flow">
+    <div class="fbox" style="background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3);color:var(--blue)">Arrange<br><small>Siapkan data & mock</small></div>
+    <div class="farr">&rarr;</div>
+    <div class="fbox" style="background:rgba(234,88,12,.08);border-color:rgba(234,88,12,.3);color:var(--orange)">Act<br><small>Panggil method</small></div>
+    <div class="farr">&rarr;</div>
+    <div class="fbox" style="background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.3);color:var(--green)">Assert<br><small>Cek hasilnya</small></div>
+  </div>
+
+  <h3>2. Golden Rule: Positive + Negative</h3>
+  <div class="info">
+    <strong>Setiap positive test harus punya minimal 1 negative test sebagai pasangannya.</strong><br>
+    Contoh: <code>getById_WhenExists</code> (positive) ↔ <code>getById_WhenNotExists</code> (negative)
+  </div>
+
+  <h3>3. Gunakan verify() untuk Side Effects</h3>
+  <pre>
+<span class="cm">// Pastikan repository.save() dipanggil tepat 1 kali</span>
+verify(employeeRepository, times(<span class="st">1</span>)).save(any(<span class="ty">Employee</span>.<span class="kw">class</span>));
+
+<span class="cm">// Pastikan repository.save() TIDAK PERNAH dipanggil (skenario error)</span>
+verify(employeeRepository, never()).save(any(<span class="ty">Employee</span>.<span class="kw">class</span>));</pre>
+
+  <h3>4. Naming Convention</h3>
+  <pre>
+<span class="cm">// Format: methodName_Condition_ExpectedBehavior</span>
+<span class="kw">void</span> <span class="ty">getEmployeeById</span>_WhenNotExists_<span class="st">ShouldThrowException</span>()
+<span class="kw">void</span> <span class="ty">createEmployee</span>_WithValidData_<span class="st">ShouldReturnCreated</span>()
+<span class="kw">void</span> <span class="ty">deleteEmployee</span>_WhenExists_<span class="st">ShouldDeleteSuccessfully</span>()</pre>
+
+  <!-- ==================== TIPS ==================== -->
+  <h2>Tips & Petunjuk</h2>
+
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <h3 style="margin-top:0">Service Test — Ingat:</h3>
+    <ul style="padding-left:20px">
+      <li><code>@Mock</code> = tiruan (bukan koneksi asli ke database)</li>
+      <li><code>@InjectMocks</code> = instance asli dari service, tapi dependency-nya mock</li>
+      <li>Konfigurasi mock: <code>when(repo.method()).thenReturn(value)</code></li>
+      <li>Untuk method void: <code>doNothing().when(repo).delete(obj)</code></li>
+      <li>Untuk test exception: <code>assertThrows(ExceptionClass.class, () -> ...)</code></li>
+      <li>Selalu akhiri dengan <code>verify()</code> untuk cek interaksi</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3 style="margin-top:0">Controller Test — Ingat:</h3>
+    <ul style="padding-left:20px">
+      <li>Gunakan <code>mockMvc.perform(get/post/put/delete(...))</code></li>
+      <li>Untuk POST/PUT: tambahkan <code>.contentType(MediaType.APPLICATION_JSON)</code> dan <code>.content(objectMapper.writeValueAsString(obj))</code></li>
+      <li>Cek status: <code>.andExpect(status().isOk())</code>, <code>.isCreated()</code>, <code>.isNotFound()</code>, <code>.isBadRequest()</code>, <code>.isNoContent()</code>, <code>.isConflict()</code></li>
+      <li>Cek JSON: <code>.andExpect(jsonPath("$.name").value("Budi"))</code></li>
+      <li>Validation error → Spring otomatis return 400 <strong>sebelum</strong> memanggil service</li>
+    </ul>
+  </div>
+
+  <div class="warn">
+    <strong>Perhatikan perbedaan:</strong>
+    <ul style="padding-left:20px;margin-top:8px">
+      <li><strong>400 Bad Request</strong> = validasi gagal (nama kosong, salary negatif) → service <strong>TIDAK dipanggil</strong></li>
+      <li><strong>404 Not Found</strong> = data tidak ditemukan → service melempar <code>EmployeeNotFoundException</code></li>
+      <li><strong>409 Conflict</strong> = email duplikat → service melempar <code>DuplicateEmailException</code></li>
+    </ul>
+  </div>
+
+  <!-- ==================== CARA MENJALANKAN ==================== -->
+  <h2>Cara Menjalankan</h2>
+
+  <h3>1. Import Project</h3>
+  <p>Buka folder <code>practice/</code> di IntelliJ IDEA atau VS Code. Maven akan otomatis download dependencies.</p>
+
+  <h3>2. Tulis Test</h3>
+  <p>Buka file test, cari komentar <strong>TODO #1</strong>, <strong>TODO #2</strong>, dst. Tulis test sesuai petunjuk dan hint yang diberikan.</p>
+
+  <h3>3. Jalankan Test</h3>
+  <pre>
+<span class="cm"># Jalankan semua test</span>
+<span class="st">mvn test</span>
+
+<span class="cm"># Jalankan hanya Service test</span>
+<span class="st">mvn test -Dtest=EmployeeServiceTest</span>
+
+<span class="cm"># Jalankan hanya Controller test</span>
+<span class="st">mvn test -Dtest=EmployeeControllerTest</span></pre>
+
+  <h3>4. Cek Hasil Test</h3>
+  <pre>
+<span class="cm"># Target: SEMUA test harus HIJAU</span>
+[INFO] Tests run: <span class="st">17</span>, Failures: <span class="st">0</span>, Errors: <span class="st">0</span>  ← EmployeeServiceTest
+[INFO] Tests run: <span class="st">12</span>, Failures: <span class="st">0</span>, Errors: <span class="st">0</span>  ← EmployeeControllerTest
+[INFO] <span class="st">BUILD SUCCESS</span></pre>
+
+  <h3>5. Cek Coverage Report (JaCoCo)</h3>
+  <p>Setelah <code>mvn test</code> selesai, JaCoCo otomatis generate report HTML. Buka di browser:</p>
+  <pre>
+<span class="cm"># Buka report coverage</span>
+<span class="st">open target/site/jacoco/index.html</span>       <span class="cm"># macOS</span>
+<span class="st">start target/site/jacoco/index.html</span>      <span class="cm"># Windows</span></pre>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h4 style="margin-top:0;margin-bottom:8px">Cara Membaca Report</h4>
+    <p style="font-size:.88rem;margin-bottom:10px">Di halaman utama ada 2 kolom penting: <code>Lines</code> (LINE coverage) dan <code>Missed Branches</code> (BRANCH coverage). Klik nama class untuk lihat warna per baris:</p>
+    <table style="font-size:.88rem;margin-bottom:0">
+      <thead><tr><th>Tanda di Report</th><th>Artinya</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <tr><td><span style="display:inline-block;width:50px;height:18px;background:#ccffcc;border:1px solid #66cc66;border-radius:3px"></span> <strong style="color:var(--green)">Baris Hijau</strong></td><td>Baris ini dieksekusi oleh test (LINE ✓)</td><td>Sudah aman &#10004;</td></tr>
+        <tr><td><span style="display:inline-block;width:50px;height:18px;background:#ffcccc;border:1px solid #cc6666;border-radius:3px"></span> <strong style="color:var(--red)">Baris Merah</strong></td><td>Baris ini BELUM pernah dieksekusi (LINE ✗)</td><td>Tambahkan test!</td></tr>
+        <tr><td><span style="display:inline-block;width:50px;height:18px;background:#ffffcc;border:1px solid #cccc66;border-radius:3px"></span> <strong style="color:var(--orange)">Berlian &#9670; Kuning</strong></td><td>BRANCH sebagian — baru sebagian cabang if/&amp;&amp; diuji (mis. "2 of 4 branches missed")</td><td>Test kondisi TRUE &amp; FALSE-nya</td></tr>
+        <tr><td><span style="display:inline-block;width:14px;height:14px;background:#38a169;border-radius:50%;transform:rotate(45deg);margin:0 18px"></span> <strong style="color:var(--green)">Berlian &#9670; Hijau</strong></td><td>BRANCH penuh — semua cabang sudah diuji</td><td>Sudah aman &#10004;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="danger">
+    <strong>Jika coverage belum 100%:</strong>
+    <ol style="padding-left:20px;margin-top:8px">
+      <li>Buka report → klik nama class yang coverage-nya belum 100%</li>
+      <li>Cari baris <strong style="color:var(--red)">merah</strong> (LINE belum) <strong>dan</strong> berlian <strong style="color:var(--orange)">&#9670; kuning</strong> (BRANCH belum)</li>
+      <li>Tulis test baru: untuk merah → eksekusi barisnya; untuk kuning → uji kondisi TRUE <strong>dan</strong> FALSE-nya</li>
+      <li>Jalankan <code>mvn test</code> lagi</li>
+      <li>Ulangi sampai <strong>semua baris hijau &amp; semua berlian hijau</strong> dan build <strong>SUCCESS</strong></li>
+    </ol>
+  </div>
+
+  <pre>
+<span class="cm"># Jika LINE atau BRANCH &lt; 100% → build GAGAL</span>
+[ERROR] Rule violated for bundle: lines covered ratio is <span style="color:#e74c3c">0.92</span>, but expected minimum is <span style="color:#e74c3c">1.00</span>
+[ERROR] Rule violated for bundle: branches covered ratio is <span style="color:#e74c3c">0.62</span>, but expected minimum is <span style="color:#e74c3c">1.00</span>
+[ERROR] <span style="color:#e74c3c">BUILD FAILURE</span>
+
+<span class="cm"># Jika coverage = 100% → build SUKSES</span>
+[INFO] All coverage checks have been met.
+[INFO] <span class="st">BUILD SUCCESS</span></pre>
+
+  <!-- ==================== KRITERIA PENILAIAN ==================== -->
+  <h2>Kriteria Penilaian</h2>
+  <table>
+    <thead><tr><th>Kriteria</th><th>Bobot</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Semua test PASS</strong></td>
+        <td style="font-weight:700;color:var(--green)">40%</td>
+        <td><code>mvn test</code> = BUILD SUCCESS, 0 failures</td>
+      </tr>
+      <tr>
+        <td><strong>Pola AAA</strong></td>
+        <td style="font-weight:700;color:var(--blue)">20%</td>
+        <td>Arrange-Act-Assert jelas dan terstruktur di setiap test</td>
+      </tr>
+      <tr>
+        <td><strong>Positive + Negative pair</strong></td>
+        <td style="font-weight:700;color:var(--orange)">20%</td>
+        <td>Setiap positive test punya pasangan negative-nya</td>
+      </tr>
+      <tr>
+        <td><strong>verify() digunakan</strong></td>
+        <td style="font-weight:700;color:var(--purple)">10%</td>
+        <td>Side effects dicek: <code>verify(times/never)</code></td>
+      </tr>
+      <tr>
+        <td><strong>Naming convention</strong></td>
+        <td style="font-weight:700;color:var(--gray)">10%</td>
+        <td>Nama test jelas dan mengikuti pola <code>method_Condition_Expected</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="ok" style="text-align:center;margin-top:32px">
+    <p style="font-size:1.2rem;font-weight:700;margin-bottom:8px">Target: 29 Test Total, 0 Failures</p>
+    <p style="margin-bottom:0">17 Service Tests + 12 Controller Tests = <strong>100% LINE &amp; BRANCH Coverage</strong></p>
+  </div>
+
+  <!-- ==================== REFERENSI ==================== -->
+  <h2>Referensi Materi</h2>
+  <p>Buka materi slide jika butuh bantuan:</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <a href="../slides/detail-annotations-guide.html" style="display:inline-block;padding:10px 20px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:10px;color:var(--blue);text-decoration:none;font-weight:600;font-size:.9rem">Panduan Anotasi &rarr;</a>
+    <a href="../slides/detail-setup-installation.html" style="display:inline-block;padding:10px 20px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:10px;color:var(--blue);text-decoration:none;font-weight:600;font-size:.9rem">Setup & Instalasi &rarr;</a>
+    <a href="../slides/detail-service-positive.html" style="display:inline-block;padding:10px 20px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2);border-radius:10px;color:var(--green);text-decoration:none;font-weight:600;font-size:.9rem">Service Test Guide &rarr;</a>
+    <a href="../slides/detail-controller-positive.html" style="display:inline-block;padding:10px 20px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2);border-radius:10px;color:var(--green);text-decoration:none;font-weight:600;font-size:.9rem">Controller Test Guide &rarr;</a>
+    <a href="../slides/detail-aaa-pattern.html" style="display:inline-block;padding:10px 20px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:10px;color:var(--purple);text-decoration:none;font-weight:600;font-size:.9rem">AAA Pattern &rarr;</a>
+  </div>
+
+</main>
+<img src="../slides/indivara-logo.png" alt="Indivara" class="watermark">
+</body>
+</html>
