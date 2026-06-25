@@ -1,5 +1,6 @@
 package com.indivara.jdt17.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.indivara.jdt17.exception.DuplicateEmailException;
 import com.indivara.jdt17.exception.EmployeeNotFoundException;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -131,12 +133,48 @@ class EmployeeControllerTest {
     //          .andExpect(status().isCreated())
     //          .andExpect(jsonPath("$.name").value("Budi Santoso"))
 
+    @Test
+    void createEmployee_WithValidData_ShouldReturnCreated() throws Exception {
+        //Arrange
+        Employee newEmployee = new Employee();
+        newEmployee.setName("Budi Santoso");
+        newEmployee.setSalary(1000.00);
+        newEmployee.setEmail("budi@gmail.com");
+        newEmployee.setDepartment("Engineering");
+
+        when(employeeService.createEmployee(any())).thenReturn(newEmployee);
+
+        //Act & Assert
+        mockMvc.perform(post("/api/employees")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(newEmployee)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Budi Santoso"));
+
+        verify(employeeService, times(1)).createEmployee(any());
+    }
+
     // TODO #4: POST /api/employees — dengan nama kosong, harus return 400 Bad Request
     //
     // Hint:
     // - Arrange: buat invalidEmployee dengan name = "" (kosong)
     // - Act & Assert: .andExpect(status().isBadRequest())
     //   PENTING: service TIDAK BOLEH dipanggil → verify(employeeService, never()).createEmployee(...)
+
+    @Test
+    void createEmployee_WithEmptyName_ShouldReturnBadRequest() throws Exception {
+        //Assert
+        employee1.setName("");
+
+        //Act & Assert
+        mockMvc.perform(post("/api/employees")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(employee1)))
+                .andExpect(status().isBadRequest());
+
+        verify(employeeService, never()).createEmployee(any());
+
+    }
 
     // TODO #5: POST /api/employees — dengan email duplikat, harus return 409 Conflict
     //
@@ -145,6 +183,18 @@ class EmployeeControllerTest {
     //                .thenThrow(new DuplicateEmailException("budi@indivara.com"))
     // - Act & Assert: .andExpect(status().isConflict())
 
+    @Test
+    void createEmployee_WhenEmailDuplicate_ShouldReturnConflict() throws  Exception {
+        //Arrange
+        when(employeeService.createEmployee(any())).thenThrow(new DuplicateEmailException("budi@gmail.com"));
+
+        //Act & Assert
+        mockMvc.perform(post("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(employee1)))
+                .andExpect(status().isConflict());
+    }
+
     // TODO #6: POST /api/employees — dengan salary negatif, harus return 400
     //
     // Hint:
@@ -152,7 +202,21 @@ class EmployeeControllerTest {
     // - Act & Assert: .andExpect(status().isBadRequest())
 
     // ====================================================================
-    // PUT /api/employees/{id}
+    @Test
+    void createEmployee_WhenSalaryMinus_ShouldReturnBadRequest() throws Exception {
+        //Arrange
+        employee1.setSalary(-1000.0);
+
+        when(employeeService.createEmployee(any())).thenReturn(employee1);
+
+        //Act & Assert
+        mockMvc.perform(post("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(employee1)))
+                .andExpect(status().isBadRequest());
+
+        verify(employeeService, never()).createEmployee(any());
+    }
     // ====================================================================
 
     // TODO #7: PUT /api/employees/{id} — ketika ditemukan, harus return 200 OK
@@ -165,6 +229,27 @@ class EmployeeControllerTest {
     //          .content(objectMapper.writeValueAsString(updatedEmployee)))
     //          .andExpect(status().isOk())
 
+    @Test
+    void updateEmployee_WhenExist_ShouldReturnOk() throws Exception {
+        //Arrange
+        Employee updatedEmployee = new Employee();
+        updatedEmployee.setId(2L);
+        updatedEmployee.setName("Budi Santoso");
+        updatedEmployee.setSalary(1000.00);
+        updatedEmployee.setEmail("budi@gmail.com");
+        updatedEmployee.setDepartment("Engineering");
+
+        when(employeeService.updateEmployee(any(), any())).thenReturn(updatedEmployee);
+
+        //Act & Assert
+        mockMvc.perform(put("/api/employees/2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedEmployee)))
+                .andExpect(status().isOk());
+
+        verify(employeeService, times(1)).updateEmployee(any(), any());
+    }
+
     // TODO #8: PUT /api/employees/{id} — ketika tidak ditemukan, harus return 404
     //
     // Hint:
@@ -173,7 +258,20 @@ class EmployeeControllerTest {
     // - Act & Assert: .andExpect(status().isNotFound())
 
     // ====================================================================
-    // DELETE /api/employees/{id}
+    @Test
+    void updateEmployee_WhenNotExist_ShouldReturnNotFound() throws Exception {
+        //Arrange
+        when(employeeService.updateEmployee(eq(99L), any(Employee.class)))
+                .thenThrow(new EmployeeNotFoundException(99L));
+
+        //Act & Assert
+        mockMvc.perform(put("/api/employees/99")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(employee1)))
+                .andExpect(status().isNotFound());
+
+        verify(employeeService, times(1)).updateEmployee(eq(99L), any(Employee.class));
+    }
     // ====================================================================
 
     // TODO #9: DELETE /api/employees/{id} — ketika ditemukan, harus return 204 No Content
@@ -185,10 +283,50 @@ class EmployeeControllerTest {
     //          .andExpect(status().isNoContent())
     // - verify bahwa deleteEmployee(1L) dipanggil
 
+    @Test
+    void deleteEmployee_WhenExists_ShouldReturnNoContent() throws Exception {
+        //Arrange
+        doNothing().when(employeeService).deleteEmployee(1L);
+
+        //Act & Assert
+        mockMvc.perform(delete("/api/employees/1"))
+                .andExpect(status().isNoContent());
+
+        verify(employeeService, times(1)).deleteEmployee(1L);
+    }
+
     // TODO #10: DELETE /api/employees/{id} — ketika tidak ditemukan, harus return 404
     //
     // Hint:
     // - Arrange: doThrow(new EmployeeNotFoundException(99L))
     //                .when(employeeService).deleteEmployee(99L)
     // - Act & Assert: .andExpect(status().isNotFound())
+
+    @Test
+    void deleteEmployee_WhenNotExist_ShouldReturnNotFound() throws Exception {
+        //Arrange
+        doThrow(new EmployeeNotFoundException(99L)).when(employeeService).deleteEmployee(99L);
+
+        //Act & Assert
+        mockMvc.perform(delete("/api/employees/99"))
+                .andExpect(status().isNotFound());
+
+        verify(employeeService, times(1)).deleteEmployee(99L);
+    }
+
+    @Test
+    void getDepartment_WhenExists_ShouldReturnOk() throws  Exception {
+        //Arrange
+        List<Employee> employeeList = new ArrayList<>();
+        employeeList.add(employee1);
+        employeeList.add(employee2);
+
+        when(employeeService.getEmployeesByDepartment(any())).thenReturn(employeeList);
+
+        //Act & Assert
+        mockMvc.perform(get("/api/employees/department/1"))
+                .andExpect(status().isOk());
+
+        verify(employeeService, times(1)).getEmployeesByDepartment(any());
+    }
 }

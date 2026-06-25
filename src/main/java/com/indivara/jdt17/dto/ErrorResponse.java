@@ -1,8 +1,12 @@
 package com.indivara.jdt17.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@Getter
 public class ErrorResponse {
 
     private int status;
@@ -22,16 +26,4 @@ public class ErrorResponse {
         this.timestamp = LocalDateTime.now();
         this.errors = errors;
     }
-
-    public int getStatus() { return status; }
-    public void setStatus(int status) { this.status = status; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-    public Map<String, String> getErrors() { return errors; }
-    public void setErrors(Map<String, String> errors) { this.errors = errors; }
 }

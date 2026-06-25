@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -132,6 +133,23 @@ class EmployeeServiceTest {
     // - Assert:  assertNotNull, assertEquals nama & email
     //            verify bahwa findByEmail() dan save() dipanggil
 
+    @Test
+    void createEmployee_WhenDataValid_ShouldSuccess() throws Exception{
+        //Arrange
+        when(employeeRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(employeeRepository.save(any())).thenReturn(employee1);
+
+        //Act
+        Employee employee = employeeService.createEmployee(employee1);
+
+        //Assert
+        assertNotNull(employee);
+        assertEquals("Budi Santoso", employee.getName());
+        assertEquals("budi@indivara.com", employee.getEmail());
+        verify(employeeRepository, times(1)).findByEmail(anyString());
+        verify(employeeRepository, times(1)).save(any());
+    }
+
     // TODO #3: createEmployee — ketika email sudah ada, harus throw DuplicateEmailException
     //
     // Hint:
@@ -140,7 +158,17 @@ class EmployeeServiceTest {
     //                 verify bahwa save() TIDAK PERNAH dipanggil → verify(repo, never()).save(...)
 
     // ====================================================================
-    // updateEmployee
+    @Test
+    void createEmployee_WhenEmailExists_ShouldThrowDuplicateEmailException() {
+        //Arrange
+        when(employeeRepository.findByEmail(any())).thenReturn(Optional.of(employee1));
+
+        //Act & Assert
+        assertThrows(DuplicateEmailException.class, () -> employeeService.createEmployee(employee1));
+
+        verify(employeeRepository, times(1)).findByEmail(any());
+        verify(employeeRepository, never()).save(any());
+    }
     // ====================================================================
 
     // TODO #4: updateEmployee — ketika employee ditemukan, harus update dan return
@@ -152,6 +180,29 @@ class EmployeeServiceTest {
     // - Act:     panggil employeeService.updateEmployee(1L, updatedData)
     // - Assert:  verify bahwa findById() dan save() dipanggil
 
+    @Test
+    void updateEmployee_WhenEmployeeExists_ShouldUpdate() {
+        //Arrange
+        Employee updatedEmployee = new Employee();
+        updatedEmployee.setId(1L);
+        updatedEmployee.setDepartment("Engineering");
+        updatedEmployee.setEmail("budi@gmail.com");
+        updatedEmployee.setSalary(1000.00);
+        updatedEmployee.setName("Budi Santoso");
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+        when(employeeRepository.save(any())).thenReturn(updatedEmployee);
+
+        //Act
+        Employee employee = employeeService.updateEmployee(1L, updatedEmployee);
+
+        //Assert
+        assertEquals("Budi Santoso", employee.getName());
+        assertEquals("budi@gmail.com", employee.getEmail());
+        verify(employeeRepository, times(1)).findById(1L);
+        verify(employeeRepository, times(1)).save(any());
+    }
+
     // TODO #5: updateEmployee — ketika employee tidak ditemukan, harus throw exception
     //
     // Hint:
@@ -160,7 +211,16 @@ class EmployeeServiceTest {
     //                 verify bahwa save() TIDAK PERNAH dipanggil
 
     // ====================================================================
-    // deleteEmployee
+    @Test
+    void updateEmployee_WhenNotExists_ShouldThrowException() throws Exception {
+        //Arrange
+        when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        //Act & Assert
+        assertThrows(EmployeeNotFoundException.class, () -> employeeService.updateEmployee(1L, employee1));
+        verify(employeeRepository, times(1)).findById(1L);
+        verify(employeeRepository, never()).save(any());
+    }
     // ====================================================================
 
     // TODO #6: deleteEmployee — ketika employee ditemukan, harus delete
@@ -171,6 +231,19 @@ class EmployeeServiceTest {
     // - Act:     panggil employeeService.deleteEmployee(1L)
     // - Assert:  verify bahwa findById() dan delete() dipanggil masing-masing 1x
 
+    @Test
+    void deleteEmployee_WhenExists_ShouldDelete() {
+        //Arrange
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+        doNothing().when(employeeRepository).delete(employee1);
+
+        //Act
+        employeeService.deleteEmployee(1L);
+
+        //Assert
+        verify(employeeRepository, times(1)).findById(1L);
+    }
+
     // TODO #7: deleteEmployee — ketika employee tidak ditemukan, harus throw exception
     //
     // Hint:
@@ -179,7 +252,16 @@ class EmployeeServiceTest {
     //                 verify bahwa delete() TIDAK PERNAH dipanggil
 
     // ====================================================================
-    // getEmployeesByDepartment
+    @Test
+    void deleteEmployee_WhenEmployeeNotExists_ShouldThrowException() {
+        //Arrange
+        when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        //Act & Assert
+        assertThrows(EmployeeNotFoundException.class, () -> employeeService.deleteEmployee(1L));
+        verify(employeeRepository, times(1)).findById(1L);
+        verify(employeeRepository, never()).delete(any());
+    }
     // ====================================================================
 
     // TODO #8: getEmployeesByDepartment — harus return employees dengan department yang sesuai
@@ -189,6 +271,21 @@ class EmployeeServiceTest {
     //            when(employeeRepository.findByDepartment("Engineering")).thenReturn(list)
     // - Act:     panggil employeeService.getEmployeesByDepartment("Engineering")
     // - Assert:  assertEquals size, verify findByDepartment dipanggil
+
+    @Test
+    void getEmployeesByDepartment_WhenValid_ShouldReturnSuccess() {
+        //Arrange
+        List<Employee> employeeList = new ArrayList<>();
+        employeeList.add(employee1);
+
+        when(employeeRepository.findByDepartment("Engineering")).thenReturn(employeeList);
+
+        //Act
+        List<Employee> resulst = employeeService.getEmployeesByDepartment("Engineering");
+
+        //Assert
+        assertEquals(employeeList, resulst);
+    }
 
     // ====================================================================
     // getSalaryGrade  →  LATIHAN BRANCH COVERAGE (if / else if / else)
@@ -206,11 +303,38 @@ class EmployeeServiceTest {
     // - Act:     String grade = employeeService.getSalaryGrade(1L)
     // - Assert:  assertEquals("HIGH", grade)
 
+    @Test
+    void getSalaryGrade_WhenSalaryGreaterThanTwentyMillion_ShouldReturnHigh() {
+        //Assert
+        employee1.setSalary(250000000.0);
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        String grade = employeeService.getSalaryGrade(1L);
+
+        //Assert
+        assertEquals("HIGH", grade);
+    }
+
     // TODO #10: getSalaryGrade — gaji 10jt..<20jt harus return "MEDIUM"
     //
     // Hint:
     // - Arrange: employee1.setSalary(15000000.0)  → menguji cabang "else if"
     // - Assert:  assertEquals("MEDIUM", grade)
+
+    @Test
+    void getSalaryGrade_WhenSalaryBetweenTenAndTwentyMillion_ShouldReturnMedium() {
+        //Assert
+        employee1.setSalary(15000000.0);
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        String grade = employeeService.getSalaryGrade(1L);
+
+        //Assert
+        assertEquals("MEDIUM", grade);
+    }
+
 
     // TODO #11: getSalaryGrade — gaji < 10jt harus return "LOW"
     //
@@ -224,6 +348,19 @@ class EmployeeServiceTest {
     // return gaji >= 10jt  &&  department == "Engineering"
     // Ada 2 kondisi = 4 branch. Butuh 3 test untuk menutup semua cabang:
 
+    @Test
+    void getSalaryGrade_WhenSalarBelowTenMillion_ShouldReturnLow() {
+        //Assert
+        employee1.setSalary(10000.0);
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        String grade = employeeService.getSalaryGrade(1L);
+
+        //Assert
+        assertEquals("LOW", grade);
+    }
+
     // TODO #12: isEligibleForBonus — gaji < 10jt harus return false
     //           (kondisi PERTAMA gagal → && langsung short-circuit ke false)
     //
@@ -232,6 +369,20 @@ class EmployeeServiceTest {
     // - Act:     boolean result = employeeService.isEligibleForBonus(1L)
     // - Assert:  assertFalse(result)
 
+    @Test
+    void isEligibleForBonus_WhenSalaryBelowTenMillion_ShouldReturnFalse() {
+        //Arrange
+        employee1.setSalary(5000000.0);
+        employee1.setDepartment("Engineering");
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        boolean result = employeeService.isEligibleForBonus(1L);
+
+        //Assert
+        assertFalse(result);
+    }
+
     // TODO #13: isEligibleForBonus — gaji cukup + dept "Engineering" harus return true
     //           (kedua kondisi TRUE)
     //
@@ -239,10 +390,38 @@ class EmployeeServiceTest {
     // - Arrange: employee1.setSalary(15000000.0); employee1.setDepartment("Engineering")
     // - Assert:  assertTrue(result)
 
+    @Test
+    void isEligibleForBonus_WhenSalaryBelowTenMillion_ShouldReturnTrue() {
+        //Arrange
+        employee1.setSalary(500000000.0);
+        employee1.setDepartment("Engineering");
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        boolean result = employeeService.isEligibleForBonus(1L);
+
+        //Assert
+        assertTrue(result);
+    }
+
     // TODO #14: isEligibleForBonus — gaji cukup tapi dept BUKAN "Engineering" harus return false
     //           (kondisi KEDUA gagal)
     //
     // Hint:
     // - Arrange: employee1.setSalary(15000000.0); employee1.setDepartment("Marketing")
     // - Assert:  assertFalse(result)
+
+    @Test
+    void isEligibleForBonus_WhenSalaryEnough_ShouldReturnFalse() {
+        //Arrange
+        employee1.setSalary(500000000.0);
+        employee1.setDepartment("Marketing");
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee1));
+
+        //Act
+        boolean result = employeeService.isEligibleForBonus(1L);
+
+        //Assert
+        assertFalse(result);
+    }
 }
